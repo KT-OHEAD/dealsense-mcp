@@ -1,0 +1,20 @@
+services:
+  - type: web
+    name: dealsense-mcp
+    env: node
+    region: oregon
+    plan: free
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_PATH
+        value: /opt/render/project/src/data/deals.db
+      - key: PORT
+        fromGroup: web
+    disk:
+      name: data
+      mountPath: /opt/render/project/src/data
+      sizeGB: 1

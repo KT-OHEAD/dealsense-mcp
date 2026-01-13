@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DealSense MCP 테스트</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            max-width: 1200px;
+            margin: 40px auto;
+            padding: 20px;
+            background: #f5f5f7;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #1d1d1f;
+            margin-bottom: 10px;
+        }
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+        }
+        button {
+            background: #0071e3;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 5px;
+        }
+        button:hover {
+            background: #0077ed;
+        }
+        button:active {
+            background: #006edb;
+        }
+        .section {
+            margin-bottom: 30px;
+        }
+        pre {
+            background: #f5f5f7;
+            padding: 15px;
+            border-radius: 8px;
+            overflow-x: auto;
+            max-height: 500px;
+            overflow-y: auto;
+        }
+        .deal-card {
+            background: #f9f9f9;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 8px;
+            border-left: 4px solid #0071e3;
+        }
+        .deal-title {
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+        .deal-price {
+            color: #e62e2e;
+            font-size: 18px;
+            font-weight: 600;
+        }
+        .deal-info {
+            color: #666;
+            font-size: 14px;
+            margin-top: 5px;
+        }
+        .score {
+            display: inline-block;
+            background: #0071e3;
+            color: white;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            margin-right: 5px;
+        }
+        .risk-note {
+            color: #e62e2e;
+            font-size: 12px;
+            margin-top: 5px;
+        }
+        .loading {
+            color: #666;
+            font-style: italic;
+        }
+        .error {
+            color: #e62e2e;
+            background: #ffe6e6;
+            padding: 10px;
+            border-radius: 6px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔥 DealSense MCP 테스트</h1>
+        <p class="subtitle">MCP 서버가 http://localhost:3000에서 실행 중이어야 합니다</p>
+
+        <div class="section">
+            <h2>1️⃣ 서버 상태 확인</h2>
+            <button onclick="checkHealth()">Health Check</button>
+            <pre id="health-result">결과가 여기 표시됩니다...</pre>
+        </div>
+
+        <div class="section">
+            <h2>2️⃣ 핫딜 Top 10</h2>
+            <button onclick="getHotDeals()">24시간 인기순</button>
+            <button onclick="getHotDeals('7d', 'discount')">7일 할인순</button>
+            <div id="deals-result"></div>
+        </div>
+
+        <div class="section">
+            <h2>3️⃣ 관심사 프로필 테스트</h2>
+            <button onclick="createProfile()">캠핑 프로필 생성</button>
+            <button onclick="getRecommendations()">추천 받기</button>
+            <pre id="profile-result">프로필을 먼저 생성하세요...</pre>
+        </div>
+    </div>
+
+    <script>
+        let currentProfileId = null;
+
+        async function checkHealth() {
+            const result = document.getElementById('health-result');
+            result.textContent = '확인 중...';
+
+            try {
+                const response = await fetch('http://localhost:3000/health');
+                const data = await response.json();
+                result.textContent = JSON.stringify(data, null, 2);
+            } catch (error) {
+                result.textContent = '❌ 오류: ' + error.message + '\n\n서버가 실행 중인지 확인하세요:\nnpm start';
+            }
+        }
+
+        async function getHotDeals(window = '24h', sort = 'popularity') {
+            const result = document.getElementById('deals-result');
+            result.innerHTML = '<p class="loading">핫딜을 불러오는 중...</p>';
+
+            // MCP 프로토콜은 SSE가 필요하므로, 여기서는 직접 데이터베이스 쿼리를 시뮬레이션
+            result.innerHTML = `
+                <div class="error">
+                    ⚠️ 브라우저에서는 MCP 프로토콜을 직접 테스트할 수 없습니다.
+                    <br><br>
+                    <strong>대신 이렇게 사용하세요:</strong>
+                    <br><br>
+                    1. <strong>MCP Inspector</strong> (권장):
+                    <pre style="background: white; padding: 10px; margin-top: 10px;">
+npm install -g @modelcontextprotocol/inspector
+mcp-inspector http://localhost:3000/mcp</pre>
+
+                    2. <strong>Claude Desktop</strong>:
+                    <br>설정 파일에 추가:
+                    <pre style="background: white; padding: 10px; margin-top: 10px;">
+{
+  "mcpServers": {
+    "dealsense": {
+      "url": "http://localhost:3000/mcp"
+    }
+  }
+}</pre>
+                </div>
+            `;
+        }
+
+        async function createProfile() {
+            const result = document.getElementById('profile-result');
+            result.textContent = '프로필 생성 테스트\n\nMCP Inspector를 사용하여 테스트하세요:\n\nmcp-inspector http://localhost:3000/mcp\n\n도구: interests.upsert\n입력:\n' + JSON.stringify({
+                "categories": ["캠핑", "아웃도어"],
+                "keywords": ["텐트", "침낭"],
+                "brands": ["코베아"],
+                "price_max": 50000,
+                "exclude_keywords": ["중고", "리퍼"]
+            }, null, 2);
+        }
+
+        async function getRecommendations() {
+            const result = document.getElementById('profile-result');
+            result.textContent = 'MCP Inspector에서 테스트:\n\n1. interests.upsert로 프로필 생성\n2. 반환된 profile_id 복사\n3. deals.by_interests 실행\n4. profile_id 입력';
+        }
+
+        // 페이지 로드 시 자동으로 health check
+        window.onload = () => {
+            checkHealth();
+        };
+    </script>
+</body>
+</html>
